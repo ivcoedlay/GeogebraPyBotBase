@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>GeoGebra</title>
+  <script src="https://www.geogebra.org/apps/deployggb.js"></script>
+</head>
+<body>
+  <div id="ggb-element" style="width: 100%; height: 100%;"></div>
+  <script>
+    var ggbApp = new GGBApplet({
+      "appName": "graphing",
+      "width": "100%",
+      "height": "100%",
+      "showToolBar": false,
+      "showAlgebraInput": false,
+      "showMenuBar": false,
+      "enableLabelDrags": false,
+      "enableShiftDragZoom": true,
+      "enableRightClick": false,
+      "language": "ru"
+    }, true);
+
+    ggbApp.inject('ggb-element');
+
+    window.pydata = null;
+
+    function ggbOnInit() {
+      if (window.pydata) {
+        eval(window.pydata);
+      }
+    }
+
+    function setGeoGebraCode(code) {
+      window.pydata = code;
+      if (typeof ggbApplet !== 'undefined') {
+        eval(code);
+      } else {
+        setTimeout(() => {
+          if (typeof ggbApplet !== 'undefined') {
+            eval(code);
+          }
+        }, 500);
+      }
+    }
+  </script>
+</body>
+</html>
