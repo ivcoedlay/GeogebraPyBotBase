@@ -1,17 +1,16 @@
-from sympy import Eq, solve, simplify, S, Ne, Eq as SymEq
-from sympy.logic.boolalg import Or, And
-from sympy.core.relational import Relational
+import logging
 import sympy as sp
+from sympy import Eq, expand, sqrt
+
+logger = logging.getLogger(__name__)
 
 def solve_linear(eq, x, params):
-    # Привести к виду A*x + B = 0
     expr = eq.lhs - eq.rhs
-    expr = sp.expand(expr)
+    expr = expand(expr)
     A = expr.coeff(x, 1)
     B = expr.subs(x, 0)
-
     steps = []
-
+    logger.debug(f"Линейное: A={A}, B={B}")
     if A == 0:
         if B == 0:
             steps.append("Уравнение превращается в 0 = 0 → решений бесконечно много.")
@@ -26,13 +25,12 @@ def solve_linear(eq, x, params):
 
 def solve_quadratic(eq, x, params):
     expr = eq.lhs - eq.rhs
-    expr = sp.expand(expr)
+    expr = expand(expr)
     a = expr.coeff(x, 2)
     b = expr.coeff(x, 1)
     c = expr.subs(x, 0)
-
     steps = []
-
+    logger.debug(f"Квадратное: a={a}, b={b}, c={c}")
     if a == 0:
         steps.append("Коэффициент a = 0 → уравнение вырождается в линейное.")
         lin_eq = Eq(b*x + c, 0)
@@ -41,15 +39,14 @@ def solve_quadratic(eq, x, params):
         D = b**2 - 4*a*c
         steps.append(f"Коэффициенты: a = {a}, b = {b}, c = {c}")
         steps.append(f"Дискриминант: D = b² - 4ac = {D}")
-
         if D == 0:
             x0 = -b / (2*a)
             steps.append(f"D = 0 → один корень: x = {x0}")
         elif D.is_number and D < 0:
             steps.append("D < 0 → действительных корней нет.")
         else:
-            x1 = (-b + sp.sqrt(D)) / (2*a)
-            x2 = (-b - sp.sqrt(D)) / (2*a)
+            x1 = (-b + sqrt(D)) / (2*a)
+            x2 = (-b - sqrt(D)) / (2*a)
             steps.append(f"Корни: x₁ = {x1}, x₂ = {x2}")
     return steps
 
@@ -63,20 +60,19 @@ def solve_equation(eq_str):
     expr = eq.lhs - eq.rhs
     expr = sp.simplify(expr)
 
-    # Попробуем определить степень по x
     try:
         degree = sp.degree(expr, x)
     except Exception:
-        degree = -1  # неопределённая степень
+        degree = -1
+
+    logger.debug(f"Степень уравнения по x: {degree}")
 
     steps = []
-
     if degree == 1:
         steps = solve_linear(eq, x, params)
     elif degree == 2:
         steps = solve_quadratic(eq, x, params)
     elif degree == 0:
-        # Константа: если expr == 0 → бесконечно много решений, иначе — нет
         if expr == 0:
             steps.append("Уравнение превращается в 0 = 0 → решений бесконечно много.")
         else:

@@ -1,0 +1,6 @@
+# Тестирование через CLI
+python main.py --eq "a*x + b = 0"
+python main.py --example "quadratic/2"
+
+# Стандартный запуск GUI
+python main.py

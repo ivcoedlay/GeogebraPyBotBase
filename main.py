@@ -156,7 +156,7 @@ class EquationSolverApp(QMainWindow):
         try:
             self.web_view.loadFinished.disconnect()
         except TypeError:
-            pass  # сигнал уже отключён
+            pass
         self.web_view.page().runJavaScript(f"setGeoGebraCode(`{js_code}`);")
 
     def save_result(self):
