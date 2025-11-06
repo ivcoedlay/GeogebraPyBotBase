@@ -1,19 +1,19 @@
 # main.py
+
 import sys
 import os
 import json
 import logging
 import argparse
+import webbrowser  # Новый импорт
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QTextEdit, QLineEdit, QPushButton, QLabel, QComboBox, QMessageBox, QFileDialog
 )
-from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtCore import QUrl
 from parser import get_parameters
 from solver import solve_equation
-from geogebra import get_function_expression_for_geogebra
-
+from geogebra import get_function_expression_for_geogebra, generate_geogebra_url
 # Настройка логирования
 logging.basicConfig(
     level=logging.DEBUG,
@@ -24,7 +24,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
 EXAMPLES_FILE = "examples.json"
 HTML_PATH = os.path.abspath("resources/geogebra.html")
 
@@ -36,7 +35,6 @@ class EquationSolverApp(QMainWindow):
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         layout = QVBoxLayout(self.central_widget)
-
         # Переключатель режимов
         mode_layout = QHBoxLayout()
         self.mode_combo = QComboBox()
@@ -45,48 +43,38 @@ class EquationSolverApp(QMainWindow):
         mode_layout.addWidget(QLabel("Режим:"))
         mode_layout.addWidget(self.mode_combo)
         layout.addLayout(mode_layout)
-
         # Примеры
         self.examples_combo = QComboBox()
         self.examples_combo.setVisible(False)
         self.examples_combo.currentTextChanged.connect(self.load_example)
         layout.addWidget(self.examples_combo)
-
         # Ввод уравнения
         self.input_line = QLineEdit()
         self.input_line.setPlaceholderText("Введите уравнение, например: a*x + b = 0")
         self.input_line.setVisible(False)
         layout.addWidget(self.input_line)
-
         # Кнопка решения
         self.solve_btn = QPushButton("Решить")
         self.solve_btn.clicked.connect(self.solve)
         self.solve_btn.setVisible(False)
         layout.addWidget(self.solve_btn)
-
         # Результат
         self.result_text = QTextEdit()
         self.result_text.setReadOnly(True)
         layout.addWidget(self.result_text)
-
-        # GeoGebra
-        self.web_view = QWebEngineView()
-        if not os.path.exists(HTML_PATH):
-            logger.error(f"HTML-файл GeoGebra не найден: {HTML_PATH}")
-            QMessageBox.critical(self, "Ошибка", f"Отсутствует файл: {HTML_PATH}")
-        else:
-            self.web_view.setUrl(QUrl.fromLocalFile(HTML_PATH))
-        layout.addWidget(self.web_view)
-
+        # Кнопка для открытия графика в браузере
+        self.show_graph_btn = QPushButton("Показать график в браузере")
+        self.show_graph_btn.clicked.connect(self.show_graph_in_browser)
+        self.show_graph_btn.setVisible(False) # Сначала скрыта
+        layout.addWidget(self.show_graph_btn)
         # Сохранение
         self.save_btn = QPushButton("Сохранить результат")
         self.save_btn.clicked.connect(self.save_result)
         self.save_btn.setEnabled(False)
         layout.addWidget(self.save_btn)
-
         self.current_eq = ""
         self.current_steps = []
-        self.current_js = ""  # Теперь это строка выражения, не JS-код
+        self.current_geogebra_url = "" # Новое поле для хранения URL
         self.load_examples()
 
     def load_examples(self):
@@ -142,48 +130,28 @@ class EquationSolverApp(QMainWindow):
             steps, x, params, expr = solve_equation(self.current_eq)
             self.current_steps = steps
             self.result_text.setPlainText("\n".join(steps))
-
-            # Сохраняем выражение для GeoGebra
+            # Генерируем выражение и URL для GeoGebra
             func_str = get_function_expression_for_geogebra(expr, params)
-            self.current_js = func_str # Сохраняем выражение до перезагрузки
-
-            # Подключаем обработчик к loadFinished ДО установки URL
-            try:
-                 # Отключаем старый, если был
-                self.web_view.loadFinished.disconnect()
-            except TypeError:
-                pass # Сигнал не был подключен
-
-            # Подключаем новый обработчик, передавая сохраненное выражение
-            # lambda теперь использует self.current_js, которое уже обновлено
-            self.web_view.loadFinished.connect(self._on_web_loaded_for_update)
-
-            # Устанавливаем URL, что инициирует загрузку
-            self.web_view.setUrl(QUrl.fromLocalFile(HTML_PATH))
-
+            self.current_geogebra_url = generate_geogebra_url(func_str)
+            logger.debug(f"Сгенерирован URL для GeoGebra: {self.current_geogebra_url}")
+            # Показываем кнопку для открытия графика
+            self.show_graph_btn.setVisible(True)
             self.save_btn.setEnabled(True)
         except Exception as e:
             logger.error(f"Ошибка при решении уравнения: {e}", exc_info=True)
             QMessageBox.critical(self, "Ошибка", f"Не удалось решить уравнение:\n{e}")
 
-    def _on_web_loaded_for_update(self, ok):
-        # Отключаем сигнал, чтобы он не срабатывал снова при следующих загрузках
+    def show_graph_in_browser(self):
+        """Открывает сгенерированный URL в стандартном браузере."""
+        if not self.current_geogebra_url:
+            logger.warning("Попытка открыть график без сгенерированного URL.")
+            return
+        logger.info(f"Открываем график в браузере: {self.current_geogebra_url}")
         try:
-            self.web_view.loadFinished.disconnect()
-        except TypeError:
-            pass # Сигнал уже отключен, если, например, загрузка не удалась
-
-        if ok:
-            # Используем сохраненное выражение
-            logger.debug(f"Страница GeoGebra загружена, обновляем график с выражением: {self.current_js}")
-            self.update_geogebra_plot(self.current_js)
-        else:
-            logger.error("Ошибка загрузки страницы GeoGebra.")
-
-    def update_geogebra_plot(self, func_str):
-        logger.debug(f"Обновление GeoGebra: f(x) = {func_str}")
-        safe_str = func_str.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
-        self.web_view.page().runJavaScript(f"setFunctionExpression(`{safe_str}`);")
+            webbrowser.open(self.current_geogebra_url)
+        except Exception as e:
+            logger.error(f"Ошибка при открытии браузера: {e}", exc_info=True)
+            QMessageBox.critical(self, "Ошибка", f"Не удалось открыть браузер:\n{e}")
 
     def save_result(self):
         if not self.current_eq:
@@ -198,7 +166,9 @@ class EquationSolverApp(QMainWindow):
                     f.write("Аналитическое решение:\n")
                     f.write("\n".join(self.current_steps))
                     f.write("\nGeoGebra expression:\n")
-                    f.write(self.current_js)
+                    f.write(get_function_expression_for_geogebra(solve_equation(self.current_eq)[3], solve_equation(self.current_eq)[2]))
+                    f.write("\nGeoGebra URL:\n")
+                    f.write(self.current_geogebra_url)
                 logger.info(f"Результат сохранён в {filename}")
                 QMessageBox.information(self, "Успех", "Результат сохранён!")
             except Exception as e:
@@ -226,6 +196,8 @@ def cli_mode():
         print("\n".join(steps))
         print("\nGeoGebra expression:")
         print(get_function_expression_for_geogebra(expr, params))
+        print("\nGeoGebra URL:")
+        print(generate_geogebra_url(get_function_expression_for_geogebra(expr, params)))
     except Exception as e:
         logger.error(f"CLI ошибка: {e}", exc_info=True)
         print(f"Ошибка: {e}")
