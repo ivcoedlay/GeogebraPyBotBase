@@ -11,7 +11,7 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtCore import QUrl
 from parser import get_parameters
 from solver import solve_equation
-from geogebra import generate_geogebra_js
+from geogebra import get_function_expression_for_geogebra
 
 # Настройка логирования
 logging.basicConfig(
@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 EXAMPLES_FILE = "examples.json"
 HTML_PATH = os.path.abspath("resources/geogebra.html")
-
 
 class EquationSolverApp(QMainWindow):
     def __init__(self):
@@ -86,7 +85,7 @@ class EquationSolverApp(QMainWindow):
 
         self.current_eq = ""
         self.current_steps = []
-        self.current_js = ""
+        self.current_js = ""  # Теперь это строка выражения, не JS-код
         self.load_examples()
 
     def load_examples(self):
@@ -142,40 +141,31 @@ class EquationSolverApp(QMainWindow):
             steps, x, params, expr = solve_equation(self.current_eq)
             self.current_steps = steps
             self.result_text.setPlainText("\n".join(steps))
-            js_code = generate_geogebra_js(expr, x, params)
-            self.current_js = js_code
-
-            # Перезагружаем GeoGebra и выполняем JS после полной загрузки
+            func_str = get_function_expression_for_geogebra(expr, params)
+            self.current_js = func_str
             try:
                 self.web_view.loadFinished.disconnect()
             except TypeError:
                 pass
-            self.web_view.loadFinished.connect(lambda ok: self._on_web_loaded(ok, js_code))
+            self.web_view.loadFinished.connect(lambda ok: self._on_web_loaded(ok, func_str))
             self.web_view.setUrl(QUrl.fromLocalFile(HTML_PATH))
-
             self.save_btn.setEnabled(True)
         except Exception as e:
             logger.error(f"Ошибка при решении уравнения: {e}", exc_info=True)
             QMessageBox.critical(self, "Ошибка", f"Не удалось решить уравнение:\n{e}")
 
-    def _on_web_loaded(self, ok, js_code):
+    def _on_web_loaded(self, ok, func_str):
         try:
             self.web_view.loadFinished.disconnect()
         except TypeError:
             pass
         if ok:
-            self.run_geogebra_js(js_code)
+            self.update_geogebra_plot(func_str)
 
-    def run_geogebra_js(self, js_code):
-        try:
-            self.web_view.loadFinished.disconnect()
-        except TypeError:
-            pass
-        logger.debug("Отправка JS-кода в GeoGebra...")
-        # Экранируем для backticks
-        safe_js = js_code.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
-        self.web_view.page().runJavaScript(f"setGeoGebraCode(`{safe_js}`);")
-        logger.debug("JS-код отправлен через runJavaScript.")
+    def update_geogebra_plot(self, func_str):
+        logger.debug(f"Обновление GeoGebra: f(x) = {func_str}")
+        safe_str = func_str.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
+        self.web_view.page().runJavaScript(f"setFunctionExpression(`{safe_str}`);")
 
     def save_result(self):
         if not self.current_eq:
@@ -189,14 +179,13 @@ class EquationSolverApp(QMainWindow):
                     f.write(f"Уравнение: {self.current_eq}\n")
                     f.write("Аналитическое решение:\n")
                     f.write("\n".join(self.current_steps))
-                    f.write("\nGeoGebra JS-код:\n")
+                    f.write("\nGeoGebra expression:\n")
                     f.write(self.current_js)
                 logger.info(f"Результат сохранён в {filename}")
                 QMessageBox.information(self, "Успех", "Результат сохранён!")
             except Exception as e:
                 logger.error(f"Ошибка сохранения: {e}", exc_info=True)
                 QMessageBox.critical(self, "Ошибка", f"Не удалось сохранить файл:\n{e}")
-
 
 def cli_mode():
     parser = argparse.ArgumentParser(description="Решение линейных и квадратных уравнений с параметрами")
@@ -217,12 +206,11 @@ def cli_mode():
         logger.info(f"CLI: решение уравнения: {eq}")
         steps, x, params, expr = solve_equation(eq)
         print("\n".join(steps))
-        print("\nGeoGebra JS:")
-        print(generate_geogebra_js(expr, x, params))
+        print("\nGeoGebra expression:")
+        print(get_function_expression_for_geogebra(expr, params))
     except Exception as e:
         logger.error(f"CLI ошибка: {e}", exc_info=True)
         print(f"Ошибка: {e}")
-
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
