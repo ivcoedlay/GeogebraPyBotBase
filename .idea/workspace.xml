@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="faa9bf84-940b-468c-aab4-44f3d4fd69b4" name="Changes" comment="Логгирование_3">
+    <list default="true" id="faa9bf84-940b-468c-aab4-44f3d4fd69b4" name="Changes" comment="Промежуточная версия (без графич реш)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/debug.log" beforeDir="false" afterPath="$PROJECT_DIR$/debug.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/geogebra.py" beforeDir="false" afterPath="$PROJECT_DIR$/geogebra.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/geogebra.html" beforeDir="false" afterPath="$PROJECT_DIR$/resources/geogebra.html" afterDir="false" />
     </list>
@@ -90,13 +89,22 @@
       <option name="project" value="LOCAL" />
       <updated>1762411207370</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Промежуточная версия (без графич реш)">
+      <option name="closed" value="true" />
+      <created>1762467866746</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1762467866746</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Предварительные изменения_логгирование" />
     <MESSAGE value="Логгирование_2" />
     <MESSAGE value="Логгирование_3" />
-    <option name="LAST_COMMIT_MESSAGE" value="Логгирование_3" />
+    <MESSAGE value="Промежуточная версия (без графич реш)" />
+    <option name="LAST_COMMIT_MESSAGE" value="Промежуточная версия (без графич реш)" />
   </component>
 </project>

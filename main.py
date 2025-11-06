@@ -1,3 +1,4 @@
+# main.py
 import sys
 import os
 import json
@@ -141,26 +142,43 @@ class EquationSolverApp(QMainWindow):
             steps, x, params, expr = solve_equation(self.current_eq)
             self.current_steps = steps
             self.result_text.setPlainText("\n".join(steps))
+
+            # Сохраняем выражение для GeoGebra
             func_str = get_function_expression_for_geogebra(expr, params)
-            self.current_js = func_str
+            self.current_js = func_str # Сохраняем выражение до перезагрузки
+
+            # Подключаем обработчик к loadFinished ДО установки URL
             try:
+                 # Отключаем старый, если был
                 self.web_view.loadFinished.disconnect()
             except TypeError:
-                pass
-            self.web_view.loadFinished.connect(lambda ok: self._on_web_loaded(ok, func_str))
+                pass # Сигнал не был подключен
+
+            # Подключаем новый обработчик, передавая сохраненное выражение
+            # lambda теперь использует self.current_js, которое уже обновлено
+            self.web_view.loadFinished.connect(self._on_web_loaded_for_update)
+
+            # Устанавливаем URL, что инициирует загрузку
             self.web_view.setUrl(QUrl.fromLocalFile(HTML_PATH))
+
             self.save_btn.setEnabled(True)
         except Exception as e:
             logger.error(f"Ошибка при решении уравнения: {e}", exc_info=True)
             QMessageBox.critical(self, "Ошибка", f"Не удалось решить уравнение:\n{e}")
 
-    def _on_web_loaded(self, ok, func_str):
+    def _on_web_loaded_for_update(self, ok):
+        # Отключаем сигнал, чтобы он не срабатывал снова при следующих загрузках
         try:
             self.web_view.loadFinished.disconnect()
         except TypeError:
-            pass
+            pass # Сигнал уже отключен, если, например, загрузка не удалась
+
         if ok:
-            self.update_geogebra_plot(func_str)
+            # Используем сохраненное выражение
+            logger.debug(f"Страница GeoGebra загружена, обновляем график с выражением: {self.current_js}")
+            self.update_geogebra_plot(self.current_js)
+        else:
+            logger.error("Ошибка загрузки страницы GeoGebra.")
 
     def update_geogebra_plot(self, func_str):
         logger.debug(f"Обновление GeoGebra: f(x) = {func_str}")
