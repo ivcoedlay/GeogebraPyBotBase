@@ -9,45 +9,60 @@
   <div id="ggb-element" style="width: 100%; height: 100%;"></div>
   <script>
     window.pydata = null;
+    let isGgbReady = false;
 
     function ggbOnInit() {
       console.log("[GeoGebra] ggbOnInit вызван.");
+      isGgbReady = true;
       if (window.pydata) {
-        console.log("[GeoGebra] Выполняется pydata:", window.pydata);
+        console.log("[GeoGebra] Выполняется pydata при инициализации:", window.pydata);
         try {
           eval(window.pydata);
         } catch (e) {
-          console.error("[GeoGebra] Ошибка в pydata:", e);
+          console.error("[GeoGebra] Ошибка в pydata при инициализации:", e);
         }
       } else {
-        console.warn("[GeoGebra] pydata пуст.");
+        console.warn("[GeoGebra] pydata пуст при инициализации.");
       }
     }
 
     function setGeoGebraCode(code) {
       console.log("[JS] setGeoGebraCode вызван с кодом:", code);
       window.pydata = code;
-      if (typeof ggbApplet !== 'undefined' && ggbApplet) {
+
+      if (isGgbReady) {
         console.log("[JS] ggbApplet доступен. Выполняем код немедленно.");
         try {
-          eval(code);
+            // Удаляем старые объекты перед выполнением нового кода
+            ggbApplet.evalCommand("Delete[\"f\"]");
+            ggbApplet.evalCommand("Delete[\"Roots\"]");
+            ggbApplet.evalCommand("ZoomStandard[]");
+            ggbApplet.evalCommand("ShowAxes = true");
+            // Выполняем основной код
+            eval(code);
         } catch (e) {
           console.error("[JS] Ошибка при eval(code):", e);
         }
       } else {
-        console.warn("[JS] ggbApplet ещё не готов. Повтор через 800 мс.");
-        setTimeout(() => {
-          if (typeof ggbApplet !== 'undefined' && ggbApplet) {
-            console.log("[JS] ggbApplet стал доступен. Повторный запуск.");
+        console.warn("[JS] ggbApplet ещё не готов. Ожидание...");
+        // Устанавливаем таймер для повторной попытки
+        const timer = setInterval(() => {
+          if (isGgbReady) {
+            console.log("[JS] ggbApplet стал доступен. Выполняем код.");
+            clearInterval(timer);
             try {
-              eval(code);
+                // Удаляем старые объекты перед выполнением нового кода
+                ggbApplet.evalCommand("Delete[\"f\"]");
+                ggbApplet.evalCommand("Delete[\"Roots\"]");
+                ggbApplet.evalCommand("ZoomStandard[]");
+                ggbApplet.evalCommand("ShowAxes = true");
+                // Выполняем основной код
+                eval(code);
             } catch (e) {
               console.error("[JS] Ошибка при повторном eval:", e);
             }
-          } else {
-            console.error("[JS] ggbApplet так и не загрузился!");
           }
-        }, 800);
+        }, 500);
       }
     }
 
@@ -64,7 +79,6 @@
       "language": "ru",
       "onLoad": "ggbOnInit"
     }, true);
-
     ggbApp.inject('ggb-element');
   </script>
 </body>
