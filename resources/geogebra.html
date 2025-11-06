@@ -8,6 +8,49 @@
 <body>
   <div id="ggb-element" style="width: 100%; height: 100%;"></div>
   <script>
+    window.pydata = null;
+
+    function ggbOnInit() {
+      console.log("[GeoGebra] ggbOnInit вызван.");
+      if (window.pydata) {
+        console.log("[GeoGebra] Выполняется pydata:", window.pydata);
+        try {
+          eval(window.pydata);
+        } catch (e) {
+          console.error("[GeoGebra] Ошибка в pydata:", e);
+        }
+      } else {
+        console.warn("[GeoGebra] pydata пуст.");
+      }
+    }
+
+    function setGeoGebraCode(code) {
+      console.log("[JS] setGeoGebraCode вызван с кодом:", code);
+      window.pydata = code;
+      if (typeof ggbApplet !== 'undefined' && ggbApplet) {
+        console.log("[JS] ggbApplet доступен. Выполняем код немедленно.");
+        try {
+          eval(code);
+        } catch (e) {
+          console.error("[JS] Ошибка при eval(code):", e);
+        }
+      } else {
+        console.warn("[JS] ggbApplet ещё не готов. Повтор через 800 мс.");
+        setTimeout(() => {
+          if (typeof ggbApplet !== 'undefined' && ggbApplet) {
+            console.log("[JS] ggbApplet стал доступен. Повторный запуск.");
+            try {
+              eval(code);
+            } catch (e) {
+              console.error("[JS] Ошибка при повторном eval:", e);
+            }
+          } else {
+            console.error("[JS] ggbApplet так и не загрузился!");
+          }
+        }, 800);
+      }
+    }
+
     var ggbApp = new GGBApplet({
       "appName": "graphing",
       "width": "100%",
@@ -18,31 +61,11 @@
       "enableLabelDrags": false,
       "enableShiftDragZoom": true,
       "enableRightClick": false,
-      "language": "ru"
+      "language": "ru",
+      "onLoad": "ggbOnInit"
     }, true);
 
     ggbApp.inject('ggb-element');
-
-    window.pydata = null;
-
-    function ggbOnInit() {
-      if (window.pydata) {
-        eval(window.pydata);
-      }
-    }
-
-    function setGeoGebraCode(code) {
-      window.pydata = code;
-      if (typeof ggbApplet !== 'undefined') {
-        eval(code);
-      } else {
-        setTimeout(() => {
-          if (typeof ggbApplet !== 'undefined') {
-            eval(code);
-          }
-        }, 500);
-      }
-    }
   </script>
 </body>
 </html>
