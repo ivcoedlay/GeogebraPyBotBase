@@ -4,14 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="faa9bf84-940b-468c-aab4-44f3d4fd69b4" name="Changes" comment="Логгирование_3">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/resources/geogebra.html" beforeDir="false" />
+    <list default="true" id="faa9bf84-940b-468c-aab4-44f3d4fd69b4" name="Changes" comment="Из-за проблем с QWebEngineView встроенный веб компонент опущен">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/debug.log" beforeDir="false" afterPath="$PROJECT_DIR$/debug.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/geogebra.py" beforeDir="false" afterPath="$PROJECT_DIR$/geogebra.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/geogebra.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/help.txt" beforeDir="false" afterPath="$PROJECT_DIR$/help.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/parser.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/geogebra.html" beforeDir="false" afterPath="$PROJECT_DIR$/resources/geogebra.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/geogebra.html" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/solver.py" beforeDir="false" afterPath="$PROJECT_DIR$/solver.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

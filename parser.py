@@ -1,6 +1,6 @@
 import re
 import logging
-from sympy import symbols, Eq, sympify
+from sympy import symbols, Eq, sympify, expand
 
 logger = logging.getLogger(__name__)
 
@@ -9,11 +9,14 @@ def extract_equation_parts(eq_str):
     """Извлекает левую и правую части уравнения."""
     if '=' not in eq_str:
         raise ValueError("Уравнение должно содержать '='")
+
     left, right = eq_str.split('=', 1)
     left = left.strip()
     right = right.strip()
+
     if not left or not right:
         raise ValueError("Левая или правая часть уравнения пуста")
+
     return left, right
 
 
@@ -30,9 +33,16 @@ def parse_equation(eq_str):
     """
     try:
         left, right = extract_equation_parts(eq_str)
+
+        # Находим все переменные в выражении
         all_vars = set(re.findall(r'[a-zA-Z]', eq_str))
+
         # Создаем словарь символов, включая 'x'
         symbols_dict = {v: symbols(v) for v in all_vars}
+
+        # Добавляем 'x', если его нет
+        if 'x' not in symbols_dict:
+            symbols_dict['x'] = symbols('x')
 
         # Парсим левую и правую части отдельно
         lhs = sympify(left, locals=symbols_dict)
@@ -41,9 +51,14 @@ def parse_equation(eq_str):
         # Создаем уравнение
         eq = Eq(lhs, rhs)
 
-        # Получаем символ 'x' и параметры
-        x = symbols_dict.get('x', symbols('x'))
-        params = [symbols_dict[p] for p in get_parameters(eq_str)]
+        # Получаем символ 'x'
+        x = symbols_dict['x']
+
+        # Получаем параметры
+        params = []
+        for p in get_parameters(eq_str):
+            if p in symbols_dict:
+                params.append(symbols_dict[p])
 
         logger.debug(f"Парсинг: уравнение={eq}, x={x}, params={params}")
         return eq, x, params
